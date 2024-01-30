@@ -1,0 +1,4 @@
+# 去tushare官网（tushare.pro）注册账号，获取token，填入下面的变量中.
+# 然后复制成文件: config.py
+
+tushare_token = 'replace with your token'
