@@ -30,8 +30,9 @@ def get_futures_data(contract_code):
     # 获取最近一个交易日的日期
     trade_cal = pro.trade_cal(exchange='CFFEX', is_open='1', start_date='20230701', end_date=today)
     today = datetime.datetime.now().strftime('%Y%m%d')
+    hour = datetime.datetime.now().hour
 
-    if today in set(trade_cal['pretrade_date']) or today in set(trade_cal['cal_date']):
+    if (today in set(trade_cal['pretrade_date']) or today in set(trade_cal['cal_date'])) and hour > 17:
         last_trade_day = today
     else:
         date_map = dict(zip(trade_cal['cal_date'], trade_cal['pretrade_date']))
