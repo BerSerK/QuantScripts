@@ -1,6 +1,6 @@
 # QuantScripts
 
-这里放了一些日常的可公开的量化交易日常脚本.
+这里放了一些日常的可公开的量化交易日常脚本. 使用的时候把config.py.template 复制到config.py 并填入你自己的tushare_token, 如果没有可以去tushare.pro 获取.
 
 # 计算股指贴水
 
