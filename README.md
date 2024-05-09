@@ -4,7 +4,7 @@
 
 # 计算股指贴水
 
-这是一个用tushare数据计算股指贴水的脚本:
+这是一个用tushare日度数据计算股指贴水的脚本:
 ```
 calculate_premium.py
 ```
