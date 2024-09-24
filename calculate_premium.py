@@ -8,27 +8,23 @@ import tushare as ts
 import pandas as pd
 import datetime
 from tabulate import tabulate
+import time
 from config import tushare_token
 
-def get_futures_data(contract_code):
-    # 替换成你自己的Tushare Token
-    ts.set_token(tushare_token)
-    
-    # 初始化Tushare
-    pro = ts.pro_api()
-    
-    # 获取股指期货合约信息
-    futures_info = pro.fut_basic(exchange='CFFEX', fut_type='1')
-    
-    # 根据合约代码筛选对应的合约数据
-    futures_info = futures_info[futures_info['ts_code'] == contract_code]
-    
-    # 获得当前日期
-    today = datetime.datetime.now()
-    today = today.strftime("%Y%m%d")
+pro = ts.pro_api(tushare_token)
 
+last_trade_day = None
+def get_last_trade_day(today):
+    # 用一个静态变量来保存最近一个交易日的日期
+    global last_trade_day
+    if last_trade_day is not None:
+        return last_trade_day
+    
+    # 100 days before today
+    start_date = (datetime.datetime.now() - datetime.timedelta(days=100)).strftime('%Y%m%d')
     # 获取最近一个交易日的日期
-    trade_cal = pro.trade_cal(exchange='CFFEX', is_open='1', start_date='20230701', end_date=today)
+    time.sleep(1.0)
+    trade_cal = pro.trade_cal(exchange='CFFEX', is_open='1', start_date=start_date, end_date=today)
     today = datetime.datetime.now().strftime('%Y%m%d')
     hour = datetime.datetime.now().hour
 
@@ -37,13 +33,41 @@ def get_futures_data(contract_code):
     else:
         date_map = dict(zip(trade_cal['cal_date'], trade_cal['pretrade_date']))
         last_trade_day = date_map[today]
-    # print("today:", today, "last_trade_day:", last_trade_day)    
-    # 获取合约价格数据
-    futures_prices = pro.fut_daily(ts_code=contract_code, trade_date=last_trade_day)
+    print("today:", today, "last_trade_day:", last_trade_day)
+    return last_trade_day
+
+futures_info = None
+stock_index_data_map = {}
+def get_futures_data(contract_code):
+    # 获取股指期货合约信息
+    global futures_info
+    if futures_info is None:
+        futures_info = pro.fut_basic(exchange='CFFEX', fut_type='1')
     
+    # 根据合约代码筛选对应的合约数据
+    futures_info = futures_info[futures_info['ts_code'] == contract_code]
+    
+    # 获得当前日期
+    today = datetime.datetime.now()
+    today = today.strftime("%Y%m%d")
+
+    last_trade_day = get_last_trade_day(today)
+
+    # 获取合约价格数据
+    try:
+        time.sleep(1.0)
+        futures_prices = pro.fut_daily(ts_code=contract_code, trade_date=last_trade_day)
+    except Exception as e:
+        print(contract_code, last_trade_day)
+        print(e)
+        raise(e) 
     # 获取股指数据
     index_code = {'IC': '000905.SH', 'IH': '000016.SH', 'IF': '000300.SH', 'IM': '000852.SH'}
-    stock_index_data = pro.index_daily(ts_code=index_code[contract_code[:2]], trade_date=last_trade_day)
+    time.sleep(1.0)
+    stock_index_data = stock_index_data_map.get(contract_code[:2], None)
+    if stock_index_data is None:
+        stock_index_data = pro.index_daily(ts_code=index_code[contract_code[:2]], trade_date=last_trade_day)
+        stock_index_data_map[contract_code[:2]] = stock_index_data
     
     return futures_prices, stock_index_data, futures_info
 
@@ -58,7 +82,7 @@ def calculate_premium(futures_prices, stock_index_data, futures_info):
 
     # 计算贴水（贴水 = 期货价格 - 股指价格）
     merged_data['premium'] = merged_data['close_futures'] - merged_data['close_index']
-
+    # print(merged_data)
     # 计算贴水百分比
     if len(merged_data['premium']) != 0:
         merged_data['premium_percentage'] = "%.2f%%"%(merged_data['premium'] / merged_data['close_index'] * 100)
