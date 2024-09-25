@@ -76,6 +76,7 @@ def calculate_premium(futures_prices, stock_index_data, futures_info):
 #    print(stock_index_data)
 #    print(futures_info)
     futures_info['expire_date'] = futures_info['last_ddate']
+#    print(tabulate(futures_info, headers='keys', tablefmt='psql'))
     # 合并数据，以方便后续计算
     merged_data = pd.merge(futures_prices, stock_index_data, on='trade_date', suffixes=('_futures', '_index'))
     merged_data = pd.merge(merged_data, futures_info, left_on = 'ts_code_futures', right_on='ts_code', suffixes=('_futures', '_index'))
@@ -94,8 +95,8 @@ def calculate_premium(futures_prices, stock_index_data, futures_info):
 def calculate_annualized_premium(premium_data):
     # 计算剩余到期日天数
     # print(premium_data)
-    premium_data['expiry_date'] = pd.to_datetime(premium_data['expire_date'])
-    premium_data['remaining_days'] = (premium_data['expiry_date'] - datetime.datetime.now()).dt.days
+    premium_data['expire_date'] = pd.to_datetime(premium_data['expire_date'])
+    premium_data['remaining_days'] = (premium_data['expire_date'] - datetime.datetime.now()).dt.days + 1
     
     # 计算年化贴水
     if len(premium_data['remaining_days']) != 0:
@@ -104,6 +105,7 @@ def calculate_annualized_premium(premium_data):
     else:
         premium_data['annualized_premium'] = 0
         premium_data['ann_premium_percentage'] = 0
+    print(tabulate(premium_data, headers='keys', tablefmt='psql'))
 
     return premium_data[['ts_code_futures', 'trade_date', 'close_futures', 'close_index', 'premium', 'premium_percentage', 'annualized_premium', 'ann_premium_percentage']]
 
