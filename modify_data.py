@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 # 定义基本路径
-base_path = 'netvalue/20240904'
+base_path = 'netvalue/20241008'
 
 # 定义文件名和输出文件名
 file_names = {
